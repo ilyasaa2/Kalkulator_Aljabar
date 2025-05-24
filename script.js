@@ -430,25 +430,24 @@ buttons.forEach(btn => {
 
 // Atur event listener untuk checkbox desimal dan pecahan
 addCheckboxListener('decimal', () => {
+  if (decimalCheckbox.checked) fractionCheckbox.checked = false;
   const lastLatex = latexOutput.dataset.lastLatex;
   if (lastLatex) {
     MathJax.typesetClear();
-    // Ini akan memperbarui format tampilan, tetapi tidak akan menghitung ulang nilai.
-    // Pengguna perlu mengklik operasi terakhir lagi untuk memperbarui hasil berdasarkan format baru.
     showLatex(lastLatex);
   }
 });
 
 addCheckboxListener('fraction', () => {
+  if (fractionCheckbox.checked) decimalCheckbox.checked = false;
   const lastLatex = latexOutput.dataset.lastLatex;
   if (lastLatex) {
     MathJax.typesetClear();
-    // Sama seperti checkbox desimal, ini akan memperbarui format tampilan
     showLatex(lastLatex);
   }
 });
 
 // Pengaturan awal untuk memastikan MathJax merender konten atau placeholder default
 document.addEventListener('DOMContentLoaded', () => {
-    MathJax.typesetPromise();
+  MathJax.typesetPromise();
 });
