@@ -64,15 +64,14 @@ function powerMatrix() {
     if (A_array.length !== A_array[0].length) {
       throw new Error('Error: Matriks harus persegi untuk perpangkatan.');
     }
-
-    const matrixA = math.matrix(A_array);
-    let result = math.identity(A_array.length);
-
-    for (let i = 1; i < n; i++) {
-      result = math.multiply(result, matrixA);
+    if (isNaN(n) || n < 0) { // Handle negative or non-numeric power input
+      throw new Error('Error: Pangkat harus bilangan bulat non-negatif.');
     }
 
-    showLatex(`${toLatex(matrixA.toArray())}^${n} = ${toLatex(roundMatrix(result.toArray()))}`);
+    const matrixA = math.matrix(A_array);
+    const result = math.pow(matrixA, n); // Use math.js for power
+
+    showLatex(`<span class="math-inline">\{toLatex\(matrixA\.toArray\(\)\)\}^</span>{n} = ${toLatex(roundMatrix(result.toArray()))}`);
   } catch (err) {
     showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
   }
