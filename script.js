@@ -1,4 +1,4 @@
-// Cache elemen DOM untuk performa yang lebih baik
+// Menggunakan Cache elemen DOM untuk performa yang lebih baik
 const matrixAInput = document.getElementById('matrixA');
 const matrixBInput = document.getElementById('matrixB');
 const latexOutput = document.getElementById('latexOutput');
