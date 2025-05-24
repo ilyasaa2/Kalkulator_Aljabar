@@ -1,73 +1,80 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kalkulator Matriks</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalkulator Matriks</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h2>Kalkulator Matriks</h2>
+    <div class="container">
+        <h2>Kalkulator Matriks</h2>
 
-    <div class="matrix-section">
-      <h3>Matriks A:</h3>
-      <textarea id="matrixA" placeholder="Contoh:
+        <div class="matrix-section">
+            <h3>Matriks A:</h3>
+            <textarea id="matrixA" placeholder="Contoh:
 1 2 3
 4 5 6
 7 8 9"></textarea>
-    </div>
+        </div>
 
-    <div class="matrix-section">
-      <h3>Matriks B:</h3>
-      <textarea id="matrixB" placeholder="Contoh:
+        <div class="matrix-section">
+            <h3>Matriks B:</h3>
+            <textarea id="matrixB" placeholder="Contoh:
 9 8 7
 6 5 4
 3 2 1"></textarea>
+        </div>
+
+        <div class="button-grid">
+            <button data-action="det">Determinan</button>
+            <button data-action="inv">Invers</button>
+            <button data-action="trans">Transpos</button>
+            <button data-action="mul">A × B</button>
+            <button data-action="add">A + B</button>
+            <button data-action="sub">A - B</button>
+            <button data-action="oke">OKE</button>
+            <button data-action="obe">OBE</button>
+            <button onclick="clearAll()">Bersihkan</button>
+        </div>
+
+        <div class="flex-row">
+            <label for="scalar">Kalikan dengan:</label>
+            <input type="number" id="scalar" value="2" />
+            <button onclick="multiplyScalar()">Kalikan Matriks A</button>
+        </div>
+
+        <div class="flex-row">
+            <label for="power">Naikkan ke pangkat:</label>
+            <input type="number" id="power" value="2" />
+            <button onclick="powerMatrix()">Matriks A ^ n</button>
+        </div>
+
+        <div class="flex-row">
+            <label>
+                <input type="checkbox" id="decimal" />
+                Tampilkan Desimal (2 angka)
+            </label>
+        </div>
+
+        <div class="flex-row">
+            <label>
+                <input type="checkbox" id="fraction" />
+                Tampilkan sebagai Pecahan
+            </label>
+        </div>
+
+        <div class="flex-row">
+            <input type="text" id="expression" placeholder="Contoh: 2A + 3B" style="flex: 1;" />
+            <button onclick="evaluateExpression()">=</button>
+        </div>
+
+        <div class="math-output" id="latexOutput"></div>
     </div>
 
-    <div class="button-grid">
-      <button data-action="det">Determinan</button>
-      <button data-action="inv">Invers</button>
-      <button data-action="trans">Transpos</button>
-      <button data-action="mul">A × B</button>
-      <button data-action="add">A + B</button>
-      <button data-action="sub">A - B</button>
-      <button data-action="oke">OKE</button>
-      <button data-action="obe">OBE</button>
-      <button onclick="clearAll()">Bersihkan</button>
-    </div>
-
-    <div class="flex-row">
-      <label for="scalar">Kalikan dengan:</label>
-      <input type="number" id="scalar" value="2" />
-      <button onclick="multiplyScalar()">Kalikan Matriks A</button>
-    </div>
-
-    <div class="flex-row">
-      <label for="power">Naikkan ke pangkat:</label>
-      <input type="number" id="power" value="2" />
-      <button onclick="powerMatrix()">Matriks A ^ n</button>
-    </div>
-
-    <div class="flex-row">
-      <label>
-        <input type="checkbox" id="decimal" />
-        Tampilkan Desimal (2 angka)
-      </label>     
-    </div>
-
-    <div class="flex-row">
-      <input type="text" id="expression" placeholder="Contoh: 2A + 3B" style="flex: 1;" />
-      <button onclick="evaluateExpression()">=</button>
-    </div>
-
-    <div class="math-output" id="latexOutput"></div>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
