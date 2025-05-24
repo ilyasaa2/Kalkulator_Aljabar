@@ -6,12 +6,62 @@ function parseMatrix(id) {
     .filter(row => row.length > 0 && row.every(num => !isNaN(num)));
 }
 
+// Fungsi pembantu untuk mencari GCD (Greatest Common Divisor)
+function gcd(a, b) {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+// Fungsi untuk mengonversi desimal ke pecahan (sederhana, mungkin tidak selalu optimal)
+// maxDenominator: Batasan untuk penyebut agar pecahan tidak terlalu rumit
+function decimalToFraction(decimal, maxDenominator = 1000) {
+  if (decimal === 0) return '0';
+  const sign = decimal < 0 ? '-' : '';
+  decimal = Math.abs(decimal);
+
+  let numerator = 1;
+  let denominator = 1;
+  let error = Math.abs(decimal - (numerator / denominator));
+
+  for (let d = 1; d <= maxDenominator; d++) {
+    const n = Math.round(decimal * d);
+    const currentError = Math.abs(decimal - (n / d));
+    if (currentError < error) {
+      error = currentError;
+      numerator = n;
+      denominator = d;
+    }
+  }
+
+  const commonDivisor = gcd(numerator, denominator);
+  numerator /= commonDivisor;
+  denominator /= commonDivisor;
+
+  if (denominator === 1) {
+    return `${sign}${numerator}`;
+  }
+  return `${sign}\\frac{${numerator}}{${denominator}}`.replace('.', ','); // Gunakan koma desimal jika ada
+}
+
+
 function toLatex(matrix) {
   const showDecimal = document.getElementById('decimal')?.checked;
+  const showFraction = document.getElementById('fraction')?.checked; // Asumsi ada checkbox 'fraction'
 
   const formatNumber = (num) => {
-    const formatted = showDecimal ? num.toFixed(2) : Math.round(num).toString();
-    return formatted.replace('.', ','); // gunakan koma desimal
+    // Tampilkan sebagai pecahan jika showFraction dicentang
+    if (showFraction && !showDecimal) { // Prioritaskan pecahan jika tidak dalam mode desimal
+      return decimalToFraction(num);
+    }
+
+    // Perilaku default jika tidak showFraction atau showDecimal dicentang
+    if (showDecimal) {
+      return num.toFixed(2).replace('.', ','); // Gunakan koma desimal
+    } else {
+      if (Math.abs(num) < 1e-9) { // Ambag untuk menganggap angka mendekati nol
+        return '0';
+      }
+      return num.toString().replace('.', ','); // Gunakan koma desimal, tanpa pembulatan
+    }
   };
 
   return `\\begin{bmatrix}${matrix.map(
@@ -21,14 +71,22 @@ function toLatex(matrix) {
 
 function roundMatrix(matrix) {
   const showDecimal = document.getElementById('decimal')?.checked;
+  const showFraction = document.getElementById('fraction')?.checked; // Asumsi ada checkbox 'fraction'
+
+  // Jika kita menampilkan pecahan, kita tidak ingin membulatkan nilai numerik matriks secara agresif
+  // Biarkan toLatex yang mengurus formatnya
+  if (showFraction && !showDecimal) {
+    return matrix; // Tidak perlu pembulatan di sini
+  }
+
   return matrix.map(row =>
     row.map(val => {
       if (showDecimal) {
         // Pembulatan ke 2 desimal yang lebih akurat
         return Math.round(val * 100) / 100;
       } else {
-        // Pembulatan ke bilangan bulat terdekat
-        return Math.round(val);
+        // Jika tidak showDecimal dan tidak showFraction, tetap pertahankan nilai asli
+        return val;
       }
     })
   );
@@ -74,9 +132,9 @@ function powerMatrix() {
     if (isNaN(n)) {
       throw new Error('Error: Pangkat harus berupa angka.');
     }
-   
+
     const matrixA = math.matrix(A_array);
-    const result = math.pow(matrixA, n); 
+    const result = math.pow(matrixA, n);
 
     showLatex(`${toLatex(matrixA.toArray())}^{${n}} = ${toLatex(roundMatrix(result.toArray()))}`);
   } catch (err) {
@@ -136,7 +194,7 @@ function applyOBE(matrix) {
     const tgtStr = prompt("Baris target (berbasis 1):");
     const kStr = prompt("Dikalikan dengan:");
     const src = parseInt(srcStr) - 1;
-    const tgt = parseInt(tgtStr) - 1;
+    const tgt = parseInt(parseInt(tgtStr)) - 1;
     const k = parseFloat(kStr);
 
     if (isNaN(src) || isNaN(tgt) || isNaN(k) ||
@@ -233,12 +291,11 @@ buttons.forEach(btn => {
       const B = parseMatrix('matrixB');
       let result;
 
-      // Fungsi pembantu untuk validasi matriks
       const isValidMatrix = (matrix) => {
         return matrix && matrix.length > 0 && matrix.every(row => Array.isArray(row) && row.length > 0 && row.every(num => !isNaN(num)));
       };
 
-      const requiresA = ['det', 'inv', 'trans', 'add', 'sub', 'mul', 'obe', 'oke', 'power']; // Tambahkan 'power'
+      const requiresA = ['det', 'inv', 'trans', 'add', 'sub', 'mul', 'obe', 'oke', 'power'];
       if (requiresA.includes(action) && !isValidMatrix(A)) {
         showLatex('\\text{Error: Matriks A tidak valid atau kosong. Pastikan hanya berisi angka dan spasi/baris baru.}');
         return;
@@ -256,7 +313,6 @@ buttons.forEach(btn => {
             showLatex('\\text{Error: Matriks harus persegi untuk determinan.}');
             return;
           }
-          // math.det dapat mengembalikan nilai negatif
           showLatex(`\\det\\left(${toLatex(A)}\\right) = ${math.format(math.det(A))}`);
           break;
         case 'inv':
@@ -266,7 +322,6 @@ buttons.forEach(btn => {
           }
           try {
             result = math.inv(A);
-            // math.inv dapat menghasilkan elemen negatif jika inversnya memiliki nilai negatif
             showLatex(`${toLatex(A)}^{-1} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{Error: Matriks singular atau tidak dapat diinverskan.}`);
@@ -274,7 +329,6 @@ buttons.forEach(btn => {
           break;
         case 'trans':
           result = math.transpose(A);
-          // Transpose akan mempertahankan nilai negatif
           showLatex(`${toLatex(A)}^T = ${toLatex(roundMatrix(result))}`);
           break;
         case 'add':
@@ -283,7 +337,6 @@ buttons.forEach(btn => {
               throw new Error('Error: Dimensi matriks harus sama untuk penjumlahan.');
             }
             result = math.add(A, B);
-            // Penjumlahan akan menghasilkan nilai negatif jika ada elemen negatif
             showLatex(`${toLatex(A)} + ${toLatex(B)} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
@@ -295,7 +348,6 @@ buttons.forEach(btn => {
               throw new Error('Error: Dimensi matriks harus sama untuk pengurangan.');
             }
             result = math.subtract(A, B);
-            // Pengurangan akan menghasilkan nilai negatif
             showLatex(`${toLatex(A)} - ${toLatex(B)} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
@@ -307,29 +359,28 @@ buttons.forEach(btn => {
               throw new Error(`Error: Jumlah kolom matriks pertama (${A[0]?.length || 0}) harus sama dengan jumlah baris matriks kedua (${B?.length || 0}) untuk perkalian.`);
             }
             result = math.multiply(A, B);
-            // Perkalian juga bisa menghasilkan nilai negatif
             showLatex(`${toLatex(A)} \\times ${toLatex(B)} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
           }
           break;
-        case 'scalar': // Asumsi ada tombol dengan data-action="scalar"
+        case 'scalar':
           multiplyScalar();
           break;
-        case 'power': // Asumsi ada tombol dengan data-action="power"
+        case 'power':
           powerMatrix();
           break;
-        case 'expr': // Asumsi ada tombol dengan data-action="expr"
+        case 'expr':
           evaluateExpression();
           break;
         case 'obe':
-          result = applyOBE(A); // OBE akan memodifikasi matriks, termasuk dengan angka negatif
-          if (!result) return; // Jika pengguna membatalkan prompt
+          result = applyOBE(A);
+          if (!result) return;
           showLatex(`\\text{Hasil OBE dari } ${toLatex(A)} \\rightarrow ${toLatex(roundMatrix(result))}`);
           break;
         case 'oke':
-          result = applyOKE(A); // OKE juga akan memodifikasi matriks, termasuk dengan angka negatif
-          if (!result) return; // Jika pengguna membatalkan prompt
+          result = applyOKE(A);
+          if (!result) return;
           showLatex(`\\text{Hasil OKE dari } ${toLatex(A)} \\rightarrow ${toLatex(roundMatrix(result))}`);
           break;
       }
@@ -341,6 +392,13 @@ buttons.forEach(btn => {
 
 // Set up event listeners for decimal and limitDecimal checkboxes
 addCheckboxListener('decimal', () => {
+  const lastLatex = document.getElementById('latexOutput').dataset.lastLatex;
+  if (lastLatex) {
+    MathJax.typesetClear();
+    showLatex(lastLatex);
+  }
+});
+addCheckboxListener('fraction', () => { // Menambahkan listener untuk checkbox 'fraction'
   const lastLatex = document.getElementById('latexOutput').dataset.lastLatex;
   if (lastLatex) {
     MathJax.typesetClear();
