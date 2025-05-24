@@ -223,8 +223,6 @@ function addCheckboxListener(id, callback) {
   }
 }
 
-/// ... (kode sebelumnya) ...
-
 // Event handler untuk semua tombol operasi
 const buttons = document.querySelectorAll('[data-action]');
 buttons.forEach(btn => {
