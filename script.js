@@ -22,9 +22,15 @@ function toLatex(matrix) {
 function roundMatrix(matrix) {
   const showDecimal = document.getElementById('decimal')?.checked;
   return matrix.map(row =>
-    row.map(val =>
-      showDecimal ? parseFloat(val.toFixed(2)) : Math.round(val)
-    )
+    row.map(val => {
+      if (showDecimal) {
+        // Pembulatan ke 2 desimal yang lebih akurat
+        return Math.round(val * 100) / 100;
+      } else {
+        // Pembulatan ke bilangan bulat terdekat
+        return Math.round(val);
+      }
+    })
   );
 }
 
@@ -64,14 +70,15 @@ function powerMatrix() {
     if (A_array.length !== A_array[0].length) {
       throw new Error('Error: Matriks harus persegi untuk perpangkatan.');
     }
-    if (isNaN(n) || n < 0) { 
-      throw new Error('Error: Pangkat harus bilangan bulat non-negatif.');
-    }
 
+    if (isNaN(n)) {
+      throw new Error('Error: Pangkat harus berupa angka.');
+    }
+   
     const matrixA = math.matrix(A_array);
     const result = math.pow(matrixA, n); 
 
-    showLatex(`<span class="math-inline">\{toLatex\(matrixA\.toArray\(\)\)\}^</span>{n} = ${toLatex(roundMatrix(result.toArray()))}`);
+    showLatex(`${toLatex(matrixA.toArray())}^{${n}} = ${toLatex(roundMatrix(result.toArray()))}`);
   } catch (err) {
     showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
   }
@@ -216,6 +223,8 @@ function addCheckboxListener(id, callback) {
   }
 }
 
+/// ... (kode sebelumnya) ...
+
 // Event handler untuk semua tombol operasi
 const buttons = document.querySelectorAll('[data-action]');
 buttons.forEach(btn => {
@@ -226,15 +235,20 @@ buttons.forEach(btn => {
       const B = parseMatrix('matrixB');
       let result;
 
-      const requiresA = ['det', 'inv', 'trans', 'add', 'sub', 'mul', 'obe', 'oke'];
-      if (requiresA.includes(action) && (!A || A.length === 0 || !A.every(row => Array.isArray(row) && row.every(num => !isNaN(num))))) {
-        showLatex('\\text{Error: Matriks A tidak valid.}');
+      // Fungsi pembantu untuk validasi matriks
+      const isValidMatrix = (matrix) => {
+        return matrix && matrix.length > 0 && matrix.every(row => Array.isArray(row) && row.length > 0 && row.every(num => !isNaN(num)));
+      };
+
+      const requiresA = ['det', 'inv', 'trans', 'add', 'sub', 'mul', 'obe', 'oke', 'power']; // Tambahkan 'power'
+      if (requiresA.includes(action) && !isValidMatrix(A)) {
+        showLatex('\\text{Error: Matriks A tidak valid atau kosong. Pastikan hanya berisi angka dan spasi/baris baru.}');
         return;
       }
 
       const requiresB = ['add', 'sub', 'mul'];
-      if (requiresB.includes(action) && (!B || B.length === 0 || !B.every(row => Array.isArray(row) && row.every(num => !isNaN(num))))) {
-        showLatex('\\text{Error: Matriks B tidak valid.}');
+      if (requiresB.includes(action) && !isValidMatrix(B)) {
+        showLatex('\\text{Error: Matriks B tidak valid atau kosong. Pastikan hanya berisi angka dan spasi/baris baru.}');
         return;
       }
 
@@ -244,6 +258,7 @@ buttons.forEach(btn => {
             showLatex('\\text{Error: Matriks harus persegi untuk determinan.}');
             return;
           }
+          // math.det dapat mengembalikan nilai negatif
           showLatex(`\\det\\left(${toLatex(A)}\\right) = ${math.format(math.det(A))}`);
           break;
         case 'inv':
@@ -253,6 +268,7 @@ buttons.forEach(btn => {
           }
           try {
             result = math.inv(A);
+            // math.inv dapat menghasilkan elemen negatif jika inversnya memiliki nilai negatif
             showLatex(`${toLatex(A)}^{-1} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{Error: Matriks singular atau tidak dapat diinverskan.}`);
@@ -260,6 +276,7 @@ buttons.forEach(btn => {
           break;
         case 'trans':
           result = math.transpose(A);
+          // Transpose akan mempertahankan nilai negatif
           showLatex(`${toLatex(A)}^T = ${toLatex(roundMatrix(result))}`);
           break;
         case 'add':
@@ -268,6 +285,7 @@ buttons.forEach(btn => {
               throw new Error('Error: Dimensi matriks harus sama untuk penjumlahan.');
             }
             result = math.add(A, B);
+            // Penjumlahan akan menghasilkan nilai negatif jika ada elemen negatif
             showLatex(`${toLatex(A)} + ${toLatex(B)} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
@@ -279,6 +297,7 @@ buttons.forEach(btn => {
               throw new Error('Error: Dimensi matriks harus sama untuk pengurangan.');
             }
             result = math.subtract(A, B);
+            // Pengurangan akan menghasilkan nilai negatif
             showLatex(`${toLatex(A)} - ${toLatex(B)} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
@@ -290,18 +309,30 @@ buttons.forEach(btn => {
               throw new Error(`Error: Jumlah kolom matriks pertama (${A[0]?.length || 0}) harus sama dengan jumlah baris matriks kedua (${B?.length || 0}) untuk perkalian.`);
             }
             result = math.multiply(A, B);
+            // Perkalian juga bisa menghasilkan nilai negatif
             showLatex(`${toLatex(A)} \\times ${toLatex(B)} = ${toLatex(roundMatrix(result))}`);
           } catch (err) {
             showLatex(`\\text{${err.message.replace(/_/g, '\\_')}}`);
           }
           break;
+        case 'scalar': // Asumsi ada tombol dengan data-action="scalar"
+          multiplyScalar();
+          break;
+        case 'power': // Asumsi ada tombol dengan data-action="power"
+          powerMatrix();
+          break;
+        case 'expr': // Asumsi ada tombol dengan data-action="expr"
+          evaluateExpression();
+          break;
         case 'obe':
-          result = applyOBE(A);
-          showLatex(`\\text{Hasil OBE dari } ${toLatex(A)} = ${toLatex(roundMatrix(result))}`);
+          result = applyOBE(A); // OBE akan memodifikasi matriks, termasuk dengan angka negatif
+          if (!result) return; // Jika pengguna membatalkan prompt
+          showLatex(`\\text{Hasil OBE dari } ${toLatex(A)} \\rightarrow ${toLatex(roundMatrix(result))}`);
           break;
         case 'oke':
-          result = applyOKE(A);
-          showLatex(`\\text{Hasil OKE dari } ${toLatex(A)} = ${toLatex(roundMatrix(result))}`);
+          result = applyOKE(A); // OKE juga akan memodifikasi matriks, termasuk dengan angka negatif
+          if (!result) return; // Jika pengguna membatalkan prompt
+          showLatex(`\\text{Hasil OKE dari } ${toLatex(A)} \\rightarrow ${toLatex(roundMatrix(result))}`);
           break;
       }
     } catch (err) {
