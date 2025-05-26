@@ -125,9 +125,6 @@ function clearAll() {
   matrixAInput.value = '';
   matrixBInput.value = '';
   latexOutput.innerHTML = '';
-  // Anda bisa menambahkan reset checkbox di sini jika diperlukan, atau biarkan statusnya tetap
-  // decimalCheckbox.checked = false;
-  // fractionCheckbox.checked = false;
 }
 
 function multiplyScalar() {
