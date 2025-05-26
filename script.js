@@ -448,3 +448,41 @@ addCheckboxListener('fraction', () => {
 document.addEventListener('DOMContentLoaded', () => {
   MathJax.typesetPromise();
 });
+
+
+// Fungsi buat swapnya
+function swapMatrices() {
+  const matrixA = document.getElementById('matrixA');
+  const matrixB = document.getElementById('matrixB');
+  
+  // buat nyimpen nilai sementara
+  const tempValue = matrixA.value;
+  const tempPlaceholder = matrixA.placeholder;
+  
+  // buat nuker nilai
+  matrixA.value = matrixB.value;
+  matrixA.placeholder = matrixB.placeholder;
+  
+  matrixB.value = tempValue;
+  matrixB.placeholder = tempPlaceholder;
+  
+  // buat animasi swap
+  const swapBtn = document.querySelector('.swap-btn');
+  swapBtn.style.transform = 'rotate(180deg)';
+  setTimeout(() => {
+    swapBtn.style.transform = 'rotate(0)';
+  }, 300);
+}
+
+function clearAll() {
+  document.getElementById('matrixA').value = '';
+  document.getElementById('matrixB').value = '';
+  document.getElementById('latexOutput').innerHTML = '';
+}
+
+function clearMatrix(id) {
+  const textarea = document.getElementById(id);
+  if (textarea) {
+    textarea.value = '';
+  }
+}
