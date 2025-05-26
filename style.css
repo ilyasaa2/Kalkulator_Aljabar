@@ -111,3 +111,142 @@ input[type="checkbox"] {
   border: 1px solid #9ccc65;
   color: #d7ccc8;
 }
+
+.matrix-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  align-items: flex-start;
+}
+
+.matrix-section {
+  flex: 1;
+  min-width: 300px;
+  background-color: #2e2e2e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #9ccc65;
+  position: relative;
+}
+
+.matrix-align-helper {
+display: flex;
+flex-direction: column;
+align-items: center;
+
+.swap-btn-container {
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+}
+.matrix-swap-btn {
+  background-color: #4a4a4a;
+  color: #aed581;
+  border:none;
+  border-radius:50%;
+  width: 40px;
+  height: 40;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.matrix-swap-btn:hover {
+  background-color: #aed581;
+  color: #1f1f1f;
+  transform: rotate(180deg);
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.matrix-table td {
+  padding: 5px;
+  text-align: center;
+  border: 1px solid #3e3e3e;
+}
+
+@media (max-width: 768px) {
+  .matrix-container {
+    flex-direction: column;
+  }
+}
+
+.matrix-swap-btn {
+  transform: rotate(90deg);
+}
+
+.matrix-swap-btn:hover {
+  transform: rotate(270deg);
+}
+
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #aed581;
+  margin: 20px 0 10px;
+  text-align: center;
+}
+
+
+/* buat layout operasi 4x2 */
+.button-grid.custom-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Buat clear all */
+.clear-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.clear-button-container button {
+  width: 150px;
+  background-color: #4a4a4a;
+  border: 1px solid #9ccc65;
+}
+
+.clear-button-container button:hover {
+  background-color: #aed581;
+  color: #1f1f1f;
+}
+
+
+.matrix-section {
+  position: relative; 
+}
+
+.matrix-clear-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #4a4a4a;
+  color: #ff6e6e;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.matrix-clear-btn:hover {
+  background-color: #ff6e6e;
+  color: #1f1f1f;
+}
