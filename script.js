@@ -20,7 +20,22 @@ function parseMatrix(id) {
   return inputElement.value
     .trim()
     .split('\n')
-    .map(row => row.trim().split(/\s+/).map(Number))
+
+    // agar bisa input pecahan
+    .map(row => row.trim().split(/\s+/).map(val => {
+        try {
+          // Coba parse sebagai ekspresi menggunakan math.evaluate, ini akan menangani pecahan
+          const parsedValue = math.evaluate(val);
+          // math.evaluate bisa mengembalikan objek Fraction jika inputnya pecahan
+          // atau Number jika inputnya desimal/integer
+          return parsedValue;
+        } catch (e) {
+          // Jika gagal parsing, mungkin itu bukan angka atau ekspresi yang valid
+          console.warn(`Could not parse '${val}' as a number or fraction. Skipping.`);
+          return NaN; // Mengembalikan NaN agar filter berikutnya menghapusnya
+        }
+    }))
+    
     .filter(row => row.length > 0 && row.every(num => !isNaN(num)));
 }
 
@@ -78,23 +93,33 @@ function toLatex(matrix) {
   const showFraction = fractionCheckbox?.checked;
 
   const formatNumber = (num) => {
-    // Prioritaskan pecahan jika showFraction dicentang dan bukan mode desimal eksplisit
-    if (showFraction && !showDecimal) {
-      return decimalToFraction(num);
-    }
-
-    // Tampilkan desimal (2 angka) jika showDecimal dicentang
-    if (showDecimal) {
-      return num.toFixed(2).replace('.', ','); // Gunakan koma desimal
+    // Jika inputnya objek Fraction dari math.js
+    if (math.isFraction(num)) {
+        if (showDecimal) {
+            // Jika ingin menampilkan desimal, konversi pecahan ke desimal
+            return (num.n / num.d).toFixed(2).replace('.', ',');
+        } else {
+            // Default: tampilkan sebagai pecahan
+            return `\\frac{${num.s * num.n}}{${num.d}}`;
+        }
     } else {
-      // Default: tampilkan angka dengan presisi penuh, namun bulatkan angka sangat kecil ke 0
-      if (Math.abs(num) < 1e-9) { // Ambang batas untuk menganggap angka mendekati nol
-        return '0';
-      }
-      return num.toString().replace('.', ','); // Gunakan koma desimal, tanpa pembulatan
-    }
-  };
+        // Jika inputnya adalah angka (Number)
+        if (showFraction && !showDecimal) {
+            // Konversi desimal ke pecahan jika diminta
+            return decimalToFraction(num);
+        }
 
+        if (showDecimal) {
+            return num.toFixed(2).replace('.', ',');
+        } else {
+            if (Math.abs(num) < 1e-9) {
+                return '0';
+            }
+            return num.toString().replace('.', ',');
+        }
+    }
+};
+  
   return `\\begin{bmatrix}${matrix.map(
     row => row.map(formatNumber).join(' & ')
   ).join(' \\\\ ')}\\end{bmatrix}`;
@@ -108,9 +133,15 @@ function roundMatrix(matrix) {
   // Jika mode pecahan atau presisi penuh, tidak perlu pembulatan numerik di sini.
   if (showDecimal && !showFraction) {
     return matrix.map(row =>
-      row.map(val => Math.round(val * 100) / 100)
+      row.map(val => {
+        // Periksa apakah nilainya adalah objek Fraction
+        if (math.isFraction(val)) {
+            return Math.round((val.n / val.d) * 100) / 100;
+        }
+        return Math.round(val * 100) / 100;
+      })
     );
-  }
+  }   
   // Jika tidak ada mode pembulatan spesifik, kembalikan matriks aslinya
   return matrix;
 }
@@ -128,16 +159,26 @@ function clearAll() {
 }
 
 function multiplyScalar() {
-  const scalar = parseFloat(scalarInput.value);
+  // Gunakan math.evaluate untuk skalar juga, agar bisa menerima pecahan (misal "1/2")
+  let scalar;
+  try {
+      scalar = math.evaluate(scalarInput.value);
+  } catch (e) {
+      showLatex('\\text{Error: Skalar tidak valid. Pastikan format angka atau pecahan.}');
+      return;
+  }
+  
   const A = parseMatrix('matrixA');
   if (!A || A.length === 0) {
     showLatex('\\text{Error: Matriks A tidak valid.}');
     return;
   }
-  if (isNaN(scalar)) {
+
+  if (isNaN(scalar) && !math.isFraction(scalar)) { // Periksa juga untuk objek Fraction
     showLatex('\\text{Error: Skalar tidak valid.}');
     return;
   }
+  
   const result = A.map(row => row.map(val => val * scalar));
   showLatex(`${scalar} \\cdot ${toLatex(A)} = ${toLatex(roundMatrix(result))}`);
 }
@@ -172,7 +213,9 @@ function evaluateExpression() {
   const expr = expressionInput.value;
   const A = parseMatrix('matrixA');
   const B = parseMatrix('matrixB');
-  const scope = { A, B };
+
+  const scope = { A: math.matrix(A), B: math.matrix(B) }; // Pastikan A dan B di scope adalah math.Matrix
+  
   try {
     const result = math.evaluate(expr, scope);
     // math.evaluate bisa mengembalikan skalar, array, atau objek math.Matrix
@@ -216,30 +259,49 @@ function applyOBE(matrix) {
   } else if (op === '2') {
     const iStr = prompt("Baris yang dikalikan (berbasis 1):");
     const kStr = prompt("Dikalikan dengan:");
-    const i = parseInt(iStr) - 1;
-    const k = parseFloat(kStr);
 
-    if (isNaN(i) || i < 0 || i >= rowCount || isNaN(k)) {
+    let k;
+    try {
+        k = math.evaluate(kStr); // Gunakan math.evaluate untuk skalar
+    } catch (e) {
+        alert("Error: Skalar pengali tidak valid.");
+        return m;
+    }
+
+    const i = parseInt(iStr) - 1;
+
+    if (isNaN(i) || i < 0 || i >= rowCount || (isNaN(k) && !math.isFraction(k))) {
+      
       alert("Error: Input tidak valid.");
       return m;
     }
+    
     m[i] = m[i].map(val => val * k);
   } else if (op === '3') {
     const srcStr = prompt("Baris sumber (berbasis 1):");
     const tgtStr = prompt("Baris target (berbasis 1):");
     const kStr = prompt("Dikalikan dengan:");
+
+    let k;
+    try {
+        k = math.evaluate(kStr); // Gunakan math.evaluate untuk skalar
+    } catch (e) {
+        alert("Error: Skalar pengali tidak valid.");
+        return m;
+    }
+
     const src = parseInt(srcStr) - 1;
     const tgt = parseInt(tgtStr) - 1;
-    const k = parseFloat(kStr);
 
-    if (isNaN(src) || isNaN(tgt) || isNaN(k) ||
+    if (isNaN(src) || isNaN(tgt) || (isNaN(k) && !math.isFraction(k)) ||
       src < 0 || src >= rowCount || tgt < 0 || tgt >= rowCount) {
       alert("Error: Input tidak valid.");
       return m;
     }
     for (let j = 0; j < colCount; j++) {
-      m[tgt][j] += k * m[src][j];
+       m[tgt][j] = math.add(m[tgt][j], math.multiply(k, m[src][j])); // Gunakan math.add dan math.multiply
     }
+    
   } else {
     alert("Error: Operasi tidak dikenal.");
   }
@@ -275,29 +337,45 @@ function applyOKE(matrix) {
   } else if (op === '2') {
     const iStr = prompt("Kolom yang dikalikan (berbasis 1):");
     const kStr = prompt("Dikalikan dengan:");
+
+    let k;
+    try {
+        k = math.evaluate(kStr); // Gunakan math.evaluate untuk skalar
+    } catch (e) {
+        alert("Error: Skalar pengali tidak valid.");
+        return m;
+    }
+
     const i = parseInt(iStr) - 1;
-    const k = parseFloat(kStr);
-    if (isNaN(i) || i < 0 || i >= colCount || isNaN(k)) {
+    if (isNaN(i) || i < 0 || i >= colCount || (isNaN(k) && !math.isFraction(k))) {
       alert("Error: Input tidak valid.");
       return m;
     }
     for (let r = 0; r < rowCount; r++) {
-      m[r][i] *= k;
+      m[r][i] = math.multiply(m[r][i], k); // Gunakan math.multiply
     }
-
+    
   } else if (op === '3') {
     const srcStr = prompt("Kolom sumber (berbasis 1):");
     const tgtStr = prompt("Kolom target (berbasis 1):");
     const kStr = prompt("Dikalikan dengan:");
+
+    let k;
+    try {
+        k = math.evaluate(kStr); // Gunakan math.evaluate untuk skalar
+    } catch (e) {
+        alert("Error: Skalar pengali tidak valid.");
+        return m;
+    }
     const src = parseInt(srcStr) - 1;
     const tgt = parseInt(tgtStr) - 1;
-    const k = parseFloat(kStr);
-    if (isNaN(src) || isNaN(tgt) || isNaN(k) ||
+
+    if (isNaN(src) || isNaN(tgt) || (isNaN(k) && !math.isFraction(k)) ||
       src < 0 || src >= colCount || tgt < 0 || tgt >= colCount) {
       alert("Error: Input tidak valid.");
     }
     for (let r = 0; r < rowCount; r++) {
-      m[r][tgt] += k * m[r][src];
+      m[r][tgt] = math.add(m[r][tgt], math.multiply(k, m[r][src])); // Gunakan math.add dan math.multiply
     }
 
   } else {
@@ -326,7 +404,7 @@ buttons.forEach(btn => {
 
       // Fungsi pembantu untuk validasi matriks
       const isValidMatrix = (matrix) => {
-        return matrix && matrix.length > 0 && matrix.every(row => Array.isArray(row) && row.length > 0 && row.every(num => !isNaN(num)));
+        return matrix && matrix.length > 0 && matrix.every(row => Array.isArray(row) && row.length > 0 && row.every(num => !isNaN(num) || math.isFraction(num)));
       };
 
       const requiresA = ['det', 'inv', 'trans', 'add', 'sub', 'mul', 'obe', 'oke', 'power'];
