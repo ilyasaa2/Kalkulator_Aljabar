@@ -343,7 +343,8 @@ body.theme-female textarea,
 body.theme-female input[type="number"],
 body.theme-female input[type="text"] {
     background-color: #fff9fc; 
-    border-color: #f5cada; 
+    border-color: #f5cada;
+    color: #ca6490;
 }
 
 body.theme-female textarea:focus,
