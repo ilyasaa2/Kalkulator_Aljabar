@@ -102,7 +102,7 @@ input[type="text"] {
     border-radius: 6px;
     border: 1px solid #8bc34a; 
     background-color: #1f1f1f; 
-    color: #ca6490; 
+    color: #f0f0f0; 
     font-size: 1rem;
     transition: border-color 0.3s, background-color 0.3s, color 0.3s;
 }
@@ -343,7 +343,8 @@ body.theme-female textarea,
 body.theme-female input[type="number"],
 body.theme-female input[type="text"] {
     background-color: #fff9fc; 
-    border-color: #f5cada; 
+    border-color: #f5cada;
+    color: #ca6490;
 }
 
 body.theme-female textarea:focus,
